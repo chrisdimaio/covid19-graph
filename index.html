@@ -1,3 +1,117 @@
+<!doctype html>
 <html>
-    <h1>COVID-19 Info</h1>
+
+<head>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8" http-equiv="encoding">
+
+	<title>Line Chart Multiple Axes</title>
+	<script src="dist/chartjs/2.9.3/Chart.min.js"></script>
+	<script src="dist/jquery/3.4.1/jquery-3.4.1.min.js"></script>
+	<script src="js/utils.js"></script>
+	<style>
+	canvas {
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+	}
+	</style>
+</head>
+
+<body>
+	<div style="width:75%;">
+		<canvas id="canvas"></canvas>
+	</div>
+	<button id="randomizeData">Randomize Data</button>
+	<script>
+		lineChartData = {
+			labels: [],
+			datasets: [{
+				label: "Cases",
+				borderColor: window.chartColors.blue,
+				backgroundColor: window.chartColors.blue,
+				fill: false,
+				data: [],
+				yAxisID: 'y-axis-1',
+			}
+			,{
+				label: 'Deathes',
+				borderColor: window.chartColors.red,
+				backgroundColor: window.chartColors.red,
+				fill: false,
+				data: [],
+				yAxisID: 'y-axis-1'
+			}
+			,{
+				label: 'Death Rate',
+				borderColor: window.chartColors.yellow,
+				backgroundColor: window.chartColors.yellow,
+				fill: false,
+				data: [],
+				yAxisID: 'y-axis-2'
+			}
+		]
+		};
+
+		window.onload = function() {
+			var ctx = document.getElementById('canvas').getContext('2d');
+			window.myLine = Chart.Line(ctx, {
+				data: lineChartData,
+				options: {
+					responsive: true,
+					hoverMode: 'index',
+					stacked: false,
+					title: {
+						display: true,
+						text: 'Chart.js Line Chart - Multi Axis'
+					},
+					scales: {
+						yAxes: [{
+							type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+							display: true,
+							position: 'left',
+							id: 'y-axis-1',
+						}, {
+							type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+							display: true,
+							position: 'right',
+							id: 'y-axis-2',
+
+							// grid line settings
+							gridLines: {
+								drawOnChartArea: false, // only want the grid lines for one axis to show up
+							},
+						}],
+					}
+				}
+			});
+		};
+
+		function updateData(url){
+			$.getJSON(url, function(data){
+				console.log(lineChartData.datasets[0].data);
+				lineChartData.labels = data.months;
+				lineChartData.datasets[0].data = data.cases;
+				lineChartData.datasets[1].data = data.deathes;
+				lineChartData.datasets[2].data = data.rate;
+			}).done(function() {
+				window.myLine.update();
+			}).fail(function(e) {
+				console.log( e );
+			});
+		};
+		updateData("data/labels.json");
+
+		document.getElementById('randomizeData').addEventListener('click', function() {
+			lineChartData.datasets.forEach(function(dataset) {
+				dataset.data = dataset.data.map(function() {
+					return randomScalingFactor();
+				});
+			});
+
+			window.myLine.update();
+		});
+	</script>
+</body>
+
 </html>
