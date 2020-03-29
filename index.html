@@ -115,7 +115,7 @@
                 window.myLine.options.title.text = data.title;
 				lineChartData.labels = data.dates;
 				lineChartData.datasets[0].data = data.cases;
-				lineChartData.datasets[1].data = data.deathes;
+				lineChartData.datasets[1].data = data.deaths;
 				lineChartData.datasets[2].data = data.rate;
 			}).done(function() {
 				window.myLine.update();
