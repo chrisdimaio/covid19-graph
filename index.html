@@ -113,7 +113,7 @@
 		function updateData(url){
 			$.getJSON(url, function(data){
                 window.myLine.options.title.text = data.title;
-				lineChartData.labels = data.months;
+				lineChartData.labels = data.dates;
 				lineChartData.datasets[0].data = data.cases;
 				lineChartData.datasets[1].data = data.deathes;
 				lineChartData.datasets[2].data = data.rate;
