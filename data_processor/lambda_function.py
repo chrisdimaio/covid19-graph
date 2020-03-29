@@ -27,7 +27,7 @@ def process():
     csv_data = {}
     retries = 0
     success = False
-    while not success and retries < 3:
+    while not success and retries < 1:
         for d_file in date_files:
             response = requests.get("{}{}".format(data_source_url, d_file))
             if response.status_code == 200:
@@ -41,35 +41,45 @@ def process():
             if not success:
                 break
 
-    data = {
-        "title": "US COVID-19 Data",
-        "dates": [],
-        "cases": [],
-        "deaths": [],
-        "rates": []
-    }
+    if success:
+        data = {
+            "title": "US COVID-19 Data",
+            "dates": [],
+            "cases": [],
+            "deaths": [],
+            "rates": []
+        }
 
-    for cd in csv_data:
-        reader = csv.DictReader(csv_data[cd].replace("\\r\\n", "\\n").split("\\n"))
-        cases = 0
-        deaths = 0
-        for row in reader:
-            if get_country(row) == "US":
-                cases += int(row["Confirmed"])
-                deaths += int(row["Deaths"]) if row["Deaths"] != "" else 0
-                # pass
-        data["dates"].append(cd)
-        data["cases"].append(cases)
-        data["deaths"].append(deaths)
-        data["rates"].append((deaths/cases * 100))
+        for cd in csv_data:
+            reader = csv.DictReader(csv_data[cd].replace("\\r\\n", "\\n").split("\\n"))
+            cases = 0
+            deaths = 0
+            for row in reader:
+                if get_country(row) == "US":
+                    cases += int(row["Confirmed"])
+                    deaths += int(row["Deaths"]) if row["Deaths"] != "" else 0
 
-    s3 = boto3.client('s3')
-    s3.upload_fileobj(
-        BytesIO(json.dumps(data).encode("utf-8")),
-        "chrisdima.io",
-        "data/us.json",
-        ExtraArgs={'ACL':'public-read'}
-    )
+            data["dates"].append(cd)
+            data["cases"].append(cases)
+            data["deaths"].append(deaths)
+            data["rates"].append((deaths/cases * 100))
+
+        bucket = "chrisdima.io"
+        key = "data/us.json"
+        extra_args = {"ACL": "public-read"}
+        upload_success = False
+        try:
+            s3 = boto3.client('s3')
+            s3.upload_fileobj(
+                BytesIO(json.dumps(data).encode("utf-8")),
+                bucket,
+                key,
+                ExtraArgs=extra_args
+            )
+            upload_success = True
+        except Exception as e:
+            print(e)
+        print("upload s3://{}/{}({})> Success: {}".format(bucket, key, extra_args, upload_success))
 
 def get_country(row):
     if "Country/Region" in row:
