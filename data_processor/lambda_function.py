@@ -13,7 +13,6 @@ from io import BytesIO
 
 def lambda_handler(event, context):
     process()
-    # process_time_series()
 
 def process():
     data_source_url = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/"
@@ -71,31 +70,6 @@ def process():
         "data/us.json",
         ExtraArgs={'ACL':'public-read'}
     )
-
-# Only has country granularity.
-def process_time_series():
-    SOURCE_CASES = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
-
-    start = datetime.datetime.strptime("01-22-2020", "%m-%d-%Y")
-
-    # Number of days from [1/22/20, today).
-    days = abs((start - datetime.datetime.today()).days) - 1
-    dates = [(start + datetime.timedelta(days=x)).strftime("%-m/%-d/%y") for x in range(days)]
-
-    response = requests.get(SOURCE_CASES)
-    if response.status_code == 200:
-        csv_data = str(response.content.decode("utf-8-sig").encode("utf-8")).lstrip("b'")
-        reader = csv.DictReader(csv_data.replace("\\r\\n", "\\n").split("\\n"))
-        print(reader.fieldnames)
-        total = 0
-        cases = []
-        for row in reader:
-            if row["Country/Region"] == "US":
-                for date in dates:
-                    total = int(row[date])
-                    cases.append(total)
-            pass
-        print(total)
 
 def get_country(row):
     if "Country/Region" in row:
