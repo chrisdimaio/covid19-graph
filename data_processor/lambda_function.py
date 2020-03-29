@@ -1,9 +1,12 @@
 #! /usr/bin/python3
 
+import boto3
 import csv
 import datetime
 import json
 import requests
+
+from io import BytesIO
 
 # Use this in Lambda
 # from botocore.vendored import requests
@@ -13,8 +16,6 @@ def lambda_handler(event, context):
     # process_time_series()
 
 def process():
-    # File format of archived data 03-28-2020.csv
-    # data_source_url = "https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_daily_reports/"
     data_source_url = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/"
 
     start = datetime.datetime.strptime("01-22-2020", "%m-%d-%Y")
@@ -63,14 +64,13 @@ def process():
         data["deaths"].append(deaths)
         data["rates"].append((deaths/cases * 100))
 
-    with open("../data/us.json", "w") as f:
-        f.write(json.dumps(data))
-
-    print(len(data["cases"]))
-    print(len(data["deaths"]))
-    print(len(data["rates"]))
-    print(len(data["dates"]))
-    print(len(date_files))
+    s3 = boto3.client('s3')
+    s3.upload_fileobj(
+        BytesIO(json.dumps(data).encode("utf-8")),
+        "chrisdima.io",
+        "data/us.json",
+        ExtraArgs={'ACL':'public-read'}
+    )
 
 # Only has country granularity.
 def process_time_series():
