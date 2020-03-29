@@ -78,7 +78,7 @@
                             },
 
                             ticks: {
-                                beginAtZero: true,
+								beginAtZero: true,
                                 stepSize: 1000
                             }
 						}, {
@@ -98,7 +98,6 @@
                             
                             ticks: {
                                 beginAtZero: true,
-                                suggestedMax: 15,
 
                                 callback: function(value, index, values) {
                                     return value + '%';
@@ -112,18 +111,20 @@
 
 		function updateData(url){
 			$.getJSON(url, function(data){
+				// Remove all the days up until the first death.
+				predeath_days = 37;
                 window.myLine.options.title.text = data.title;
-				lineChartData.labels = data.dates;
-				lineChartData.datasets[0].data = data.cases;
-				lineChartData.datasets[1].data = data.deaths;
-				lineChartData.datasets[2].data = data.rate;
+				lineChartData.labels = data.dates.slice(predeath_days);
+				lineChartData.datasets[0].data = data.cases.slice(predeath_days);
+				lineChartData.datasets[1].data = data.deaths.slice(predeath_days);
+				lineChartData.datasets[2].data = data.rates.slice(predeath_days);
 			}).done(function() {
 				window.myLine.update();
 			}).fail(function(e) {
 				console.log( e );
 			});
 		};
-		updateData("data/data.json");
+		updateData("data/us.json");
 
 		// document.getElementById('randomizeData').addEventListener('click', function() {
 		// 	lineChartData.datasets.forEach(function(dataset) {
