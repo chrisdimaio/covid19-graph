@@ -2,6 +2,7 @@
 
 import csv
 import datetime
+import json
 import requests
 
 # Use this in Lambda
@@ -27,7 +28,6 @@ def process():
     retries = 0
     success = False
     while not success and retries < 3:
-        # for d_file in date_files[len(date_files)-1: ]:
         for d_file in date_files:
             response = requests.get("{}{}".format(data_source_url, d_file))
             if response.status_code == 200:
@@ -44,9 +44,9 @@ def process():
     data = {
         "title": "US COVID-19 Data",
         "dates": [],
-        "cases": [0],
-        "deaths": [0],
-        "rates": [0]
+        "cases": [],
+        "deaths": [],
+        "rates": []
     }
 
     for cd in csv_data:
@@ -57,13 +57,20 @@ def process():
             if get_country(row) == "US":
                 cases += int(row["Confirmed"])
                 deaths += int(row["Deaths"]) if row["Deaths"] != "" else 0
-                pass
+                # pass
         data["dates"].append(cd)
         data["cases"].append(cases)
         data["deaths"].append(deaths)
-        data["rates"].append(deaths/cases)
+        data["rates"].append((deaths/cases * 100))
 
-    print(data)
+    with open("../data/us.json", "w") as f:
+        f.write(json.dumps(data))
+
+    print(len(data["cases"]))
+    print(len(data["deaths"]))
+    print(len(data["rates"]))
+    print(len(data["dates"]))
+    print(len(date_files))
 
 # Only has country granularity.
 def process_time_series():
