@@ -77,8 +77,15 @@ def process():
             if STORE_IN_S3:
                 store_in_s3("data/{}.json".format(key), final_data)
             else:
-                with open("../data/{}.json".format(key), 'w') as f:
-                    f.write(json.dumps(final_data))
+                success = False
+                try:
+                    filename = "data/{}.json".format(key)
+                    with open(filename, 'w') as f:
+                        f.write(json.dumps(final_data))
+                    success = True
+                except Exception as e:
+                    print(e)
+                print("Saved to {}> Success: {}".format(filename, success))
 
 def store_in_s3(key, data):
     bucket = "chrisdima.io"
