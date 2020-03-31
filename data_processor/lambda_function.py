@@ -6,10 +6,10 @@ import datetime
 import json
 import requests
 
+from collections import OrderedDict
 from io import BytesIO
 
-# Use this in Lambda
-# from botocore.vendored import requests
+STORE_IN_S3 = True
 
 def lambda_handler(event, context):
     process()
@@ -42,49 +42,77 @@ def process():
                 break
 
     if success:
-        data = {
-            "title": "US COVID-19 Data",
-            "dates": [],
-            "cases": [],
-            "deaths": [],
-            "rates": []
-        }
 
+        totals = {}
         for cd in csv_data:
             reader = csv.DictReader(csv_data[cd].replace("\\r\\n", "\\n").split("\\n"))
             cases = 0
             deaths = 0
             for row in reader:
                 if get_country(row) == "US":
-                    cases += int(row["Confirmed"])
-                    deaths += int(row["Deaths"]) if row["Deaths"] != "" else 0
+                    state = get_state(row)
+                    if state != "Recovered":
+                        calc_totals(totals, row, state, cd)
+                        calc_totals(totals, row, "US", cd)
 
-            data["dates"].append(cd)
-            data["cases"].append(cases)
-            data["deaths"].append(deaths)
-            data["rates"].append((deaths/cases * 100))
+        for key in totals:
+            dates = []
+            cases = []
+            deaths = []
+            rates = []
+            for date in totals[key]:
+                dates.append(date)
+                cases.append(totals[key][date]["cases"])
+                deaths.append(totals[key][date]["deaths"])
+                rates.append(totals[key][date]["rate"])
+            final_data = {
+                "title": "{} COVID-19 Grpah".format(key),
+                "dates": dates,
+                "cases": cases,
+                "deaths": deaths,
+                "rates": rates
+            }
 
-        bucket = "chrisdima.io"
-        key = "data/us.json"
-        extra_args = {"ACL": "public-read"}
-        upload_success = False
-        try:
-            s3 = boto3.client('s3')
-            s3.upload_fileobj(
-                BytesIO(json.dumps(data).encode("utf-8")),
-                bucket,
-                key,
-                ExtraArgs=extra_args
-            )
-            upload_success = True
-        except Exception as e:
-            print(e)
-        print("upload s3://{}/{}({})> Success: {}".format(bucket, key, extra_args, upload_success))
+            key = key.replace(" ", "_")
+            if STORE_IN_S3:
+                store_in_s3("data/{}.json".format(key), final_data)
+            else:
+                with open("../data/{}.json".format(key), 'w') as f:
+                    f.write(json.dumps(final_data))
+
+def store_in_s3(key, data):
+    bucket = "chrisdima.io"
+    extra_args = {"ACL": "public-read"}
+    success = False
+    try:
+        s3 = boto3.client('s3')
+        s3.upload_fileobj(
+            BytesIO(json.dumps(data).encode("utf-8")),
+            bucket,
+            key,
+            ExtraArgs=extra_args
+        )
+        success = True
+    except Exception as e:
+        print(e)
+    print("upload s3://{}/{}({})> Success: {}".format(bucket, key, extra_args, success))
+
+def calc_totals(totals, row, key, cd):
+    totals.setdefault(key, {})
+    totals[key].setdefault(cd, {"cases": 0, "deaths": 0})
+    totals[key][cd]["cases"] += int(row["Confirmed"])
+    totals[key][cd]["deaths"] += int(row["Deaths"]) if row["Deaths"] != "" else 0
+    totals[key][cd]["rate"] = totals[key][cd]["deaths"]/totals[key][cd]["cases"]*100 if totals[key][cd]["deaths"] > 0 else 0
 
 def get_country(row):
     if "Country/Region" in row:
         return row["Country/Region"]
     return row["Country_Region"]
+
+def get_state(row):
+    if "Province/State" in row:
+        return row["Province/State"]
+    return row["Province_State"]
 
 if __name__ == "__main__":
     lambda_handler(None, None)
