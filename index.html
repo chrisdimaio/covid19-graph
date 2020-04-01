@@ -31,10 +31,28 @@
 
 <body>
 	<div style="width:85%;">
+		<!-- <label for="cars">Choose a car:</label> -->
+		<select id="states">
+			<option selected="selected" value="us.json">All</option>
+		</select>
+	</div>
+	<div style="width:85%;">
 		<canvas id="canvas"></canvas>
 	</div>
 	<!-- <button id="randomizeData">Randomize Data</button> -->
 	<script>
+		$.getJSON("data/options.json", function(result) {
+			var $dropdown = $("#states");
+			$.each(result, function() {
+				$dropdown.append($("<option />").val(this.dataset).text(this.name));
+			});
+		});
+
+		var state_selector = document.getElementById("states");
+		state_selector.addEventListener("change", function() {
+			updateData("data/" + state_selector.options[state_selector.selectedIndex].value);
+		});
+
 		lineChartData = {
 			labels: [],
 			datasets: [{

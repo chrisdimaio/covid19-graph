@@ -11,7 +11,7 @@ from io import BytesIO
 
 STORE_IN_S3 = True
 
-filters = [",", "County", "county", "Recovered"]
+filters = [",", "County", "county", "Recovered", "Unassigned Location", "Wuhan", "Grand Princess Cruise Ship", "United States Virgin Islands"]
 
 def lambda_handler(event, context):
     process()
@@ -43,6 +43,7 @@ def process():
             if not success:
                 break
 
+    options_data = []
     if success:
         totals = {}
         for cd in csv_data:
@@ -74,16 +75,27 @@ def process():
                     "rates": rates
                 }
 
-                key = key.replace(" ", "").lower()
-                if STORE_IN_S3:
-                    store_in_s3("data/{}.json".format(key), final_data)
-                else:
-                    store_local(key, final_data)
+                filename = "{}.json".format(key.replace(" ", "").lower())
 
-def store_local(key, data):
+                # We exclude US because it's the hard coded default.
+                if key != "US":
+                    options_data.append({"name": key, "dataset": filename})
+
+                store("data/{}".format(filename), final_data)
+
+        options_data.sort(key=lambda o: o["name"])
+        store("data/options.json", options_data)
+
+def store(filename, data):
+    if STORE_IN_S3:
+            store_in_s3(filename, data)
+    else:
+        store_local(filename, data)
+
+def store_local(filename, data):
     success = False
     try:
-        filename = "data/{}.json".format(key)
+        # filename = "data/{}.json".format(key)
         with open(filename, 'w') as f:
             f.write(json.dumps(data))
         success = True
