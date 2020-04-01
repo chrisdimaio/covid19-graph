@@ -9,7 +9,7 @@ import requests
 from collections import OrderedDict
 from io import BytesIO
 
-STORE_IN_S3 = False
+STORE_IN_S3 = True
 
 filters = [",", "County", "county", "Recovered"]
 
