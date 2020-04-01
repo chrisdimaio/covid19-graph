@@ -2,4 +2,5 @@ venv/
 .vscode
 
 
+*.json
 *.zip
