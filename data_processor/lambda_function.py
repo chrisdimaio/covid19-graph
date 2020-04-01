@@ -11,6 +11,8 @@ from io import BytesIO
 
 STORE_IN_S3 = True
 
+filters = [",", "County", "county", "Recovered"]
+
 def lambda_handler(event, context):
     process()
 
@@ -42,7 +44,6 @@ def process():
                 break
 
     if success:
-
         totals = {}
         for cd in csv_data:
             reader = csv.DictReader(csv_data[cd].replace("\\r\\n", "\\n").split("\\n"))
@@ -51,41 +52,44 @@ def process():
             for row in reader:
                 if get_country(row) == "US":
                     state = get_state(row)
-                    if state != "Recovered":
-                        calc_totals(totals, row, state, cd)
-                        calc_totals(totals, row, "US", cd)
+                    calc_totals(totals, row, state, cd)
+                    calc_totals(totals, row, "US", cd)
 
         for key in totals:
-            dates = []
-            cases = []
-            deaths = []
-            rates = []
-            for date in totals[key]:
-                dates.append(date)
-                cases.append(totals[key][date]["cases"])
-                deaths.append(totals[key][date]["deaths"])
-                rates.append(totals[key][date]["rate"])
-            final_data = {
-                "title": "{} COVID-19 Grpah".format(key),
-                "dates": dates,
-                "cases": cases,
-                "deaths": deaths,
-                "rates": rates
-            }
+            if not any(ff for ff in filters if ff in key):
+                dates = []
+                cases = []
+                deaths = []
+                rates = []
+                for date in totals[key]:
+                    dates.append(date)
+                    cases.append(totals[key][date]["cases"])
+                    deaths.append(totals[key][date]["deaths"])
+                    rates.append(totals[key][date]["rate"])
+                final_data = {
+                    "title": "{} COVID-19 Grpah".format(key),
+                    "dates": dates,
+                    "cases": cases,
+                    "deaths": deaths,
+                    "rates": rates
+                }
 
-            key = key.replace(" ", "_")
-            if STORE_IN_S3:
-                store_in_s3("data/{}.json".format(key), final_data)
-            else:
-                success = False
-                try:
-                    filename = "data/{}.json".format(key)
-                    with open(filename, 'w') as f:
-                        f.write(json.dumps(final_data))
-                    success = True
-                except Exception as e:
-                    print(e)
-                print("Saved to {}> Success: {}".format(filename, success))
+                key = key.replace(" ", "").lower()
+                if STORE_IN_S3:
+                    store_in_s3("data/{}.json".format(key), final_data)
+                else:
+                    store_local(key, final_data)
+
+def store_local(key, data):
+    success = False
+    try:
+        filename = "data/{}.json".format(key)
+        with open(filename, 'w') as f:
+            f.write(json.dumps(data))
+        success = True
+    except Exception as e:
+        print(e)
+    print("Saved to {}> Success: {}".format(filename, success))
 
 def store_in_s3(key, data):
     bucket = "chrisdima.io"
