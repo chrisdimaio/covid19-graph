@@ -68,7 +68,7 @@ def process():
                     deaths.append(totals[key][date]["deaths"])
                     rates.append(totals[key][date]["rate"])
                 final_data = {
-                    "title": "{} COVID-19 Grpah".format(key),
+                    "title": "{} COVID-19 Graph".format(key),
                     "dates": dates,
                     "cases": cases,
                     "deaths": deaths,
