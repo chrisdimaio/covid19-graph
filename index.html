@@ -122,7 +122,7 @@
 		function updateData(url){
 			$.getJSON(url, function(data){
 				// Remove all the days up until the first death.
-				predeath_days = 37;
+				predeath_days = 6;
                 window.myLine.options.title.text = data.title;
 				lineChartData.labels = data.dates.slice(predeath_days);
 				lineChartData.datasets[0].data = data.cases.slice(predeath_days);

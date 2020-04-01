@@ -9,7 +9,7 @@ import requests
 from collections import OrderedDict
 from io import BytesIO
 
-STORE_IN_S3 = True
+STORE_IN_S3 = False
 
 filters = [",", "County", "county", "Recovered"]
 
@@ -19,7 +19,7 @@ def lambda_handler(event, context):
 def process():
     data_source_url = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/"
 
-    start = datetime.datetime.strptime("01-22-2020", "%m-%d-%Y")
+    start = datetime.datetime.strptime("02-22-2020", "%m-%d-%Y")
 
     # Number of days from [1/22/20, today).
     days = abs((start - datetime.datetime.today()).days) - 1
