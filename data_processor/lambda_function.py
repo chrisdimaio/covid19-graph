@@ -6,7 +6,6 @@ import datetime
 import json
 import requests
 
-from collections import OrderedDict
 from io import BytesIO
 
 STORE_IN_S3 = True
@@ -72,7 +71,10 @@ def process():
                     "dates": dates,
                     "cases": cases,
                     "deaths": deaths,
-                    "rates": rates
+                    "rates": rates,
+                    "new_cases": impute_negatives(calc_increase(cases)),
+                    "new_deaths": impute_negatives(calc_increase(deaths)),
+                    "first_death": first_non_zero(deaths)
                 }
 
                 filename = "{}.json".format(key.replace(" ", "").lower())
@@ -85,6 +87,35 @@ def process():
 
         options_data.sort(key=lambda o: o["name"])
         store("data/options.json", options_data)
+
+def first_non_zero(items):
+    return next((i for i, x in enumerate(items) if x), 0)
+
+def calc_increase(totals):
+    """
+    Return a list of values representing the change in value from i-1 and i.
+    """
+    changes = []
+    for i, s in enumerate(totals):
+        if i == 0:
+            changes.append(totals[i])
+        else:
+            changes.append(s - totals[i-1])
+    return changes
+
+def impute_negatives(items):
+    """
+    If an item in the list is negative replace it with previous items value. If it's the first item in the list replace
+    it with zero.
+    """
+    for i, item in enumerate(items):
+        if item < 0:
+            if i == 0:
+                items[i] = 0
+            else:
+                items[i] = items[i-1]
+    return items
+
 
 def store(filename, data):
     if STORE_IN_S3:
