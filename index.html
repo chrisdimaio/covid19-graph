@@ -31,7 +31,6 @@
 
 <body>
 	<div style="width:85%;">
-		<!-- <label for="cars">Choose a car:</label> -->
 		<select id="states">
 			<option selected="selected" value="us.json">All</option>
 		</select>
@@ -56,7 +55,7 @@
 		lineChartData = {
 			labels: [],
 			datasets: [{
-				label: "Cases",
+				label: "New Cases",
 				borderColor: window.chartColors.blue,
 				backgroundColor: window.chartColors.blue,
 				fill: false,
@@ -64,7 +63,7 @@
 				yAxisID: 'y-axis-1',
 			}
 			,{
-				label: 'Deaths',
+				label: 'New Deaths',
 				borderColor: window.chartColors.red,
 				backgroundColor: window.chartColors.red,
 				fill: false,
@@ -140,11 +139,15 @@
 		function updateData(url){
 			$.getJSON(url, function(data){
 				// Remove all the days up until the first death.
-				predeath_days = 6;
+				if(data.first_death > 0){
+					predeath_days = data.first_death - 1;
+				} else {
+					predeath_days = 0;
+				}
                 window.myLine.options.title.text = data.title;
 				lineChartData.labels = data.dates.slice(predeath_days);
-				lineChartData.datasets[0].data = data.cases.slice(predeath_days);
-				lineChartData.datasets[1].data = data.deaths.slice(predeath_days);
+				lineChartData.datasets[0].data = data.new_cases.slice(predeath_days);
+				lineChartData.datasets[1].data = data.new_deaths.slice(predeath_days);
 				lineChartData.datasets[2].data = data.rates.slice(predeath_days);
 			}).done(function() {
 				window.myLine.update();
