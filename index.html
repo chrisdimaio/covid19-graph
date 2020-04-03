@@ -30,15 +30,21 @@
 </head>
 
 <body>
-	<div style="width:85%;">
+	<div>
 		<select id="states">
 			<option selected="selected" value="us.json">All</option>
 		</select>
+		<table>
+			<thead><tr><th>Stats</th><th></th></tr></thead>
+			<tbody>
+				<tr><td>Total Cases: </td><td id="t_cases"></td></tr>
+				<tr><td>Total Deaths: </td><td id="t_deaths"></td></tr>
+			</tbody>
+		</table>
 	</div>
-	<div style="width:85%;">
+	<div style="width:50%;">
 		<canvas id="canvas"></canvas>
 	</div>
-	<!-- <button id="randomizeData">Randomize Data</button> -->
 	<script>
 		$.getJSON("data/options.json", function(result) {
 			var $dropdown = $("#states");
@@ -98,43 +104,45 @@
 							type: 'linear',
 							display: true,
 							position: 'left',
-                            id: 'y-axis-1',
+							id: 'y-axis-1',
 
-                            scaleLabel: {
-                                display: true,
-                                labelString: "Number of people"
-                            },
+							scaleLabel: {
+									display: true,
+									labelString: "Number of people"
+							},
 
-                            ticks: {
-                                stepSize: 20000
-                            }
+							ticks: {
+									stepSize: 1000
+							}
 						}, {
 							type: 'linear',
 							display: true,
 							position: 'right',
 							id: 'y-axis-2',
-
-                            scaleLabel: {
-                                display: true,
-                                labelString: "Death rate"
-                            },
+							scaleLabel: {
+									display: true,
+									labelString: "Death rate"
+							},
 
 							gridLines: {
 								drawOnChartArea: false,
-                            },
-                            
-                            ticks: {
-                                beginAtZero: true,
+								},
+							ticks: {
+									beginAtZero: true,
 
-                                callback: function(value, index, values) {
-                                    return value + '%';
-                                }
-                            }
+									callback: function(value, index, values) {
+											return value + '%';
+									}
+							}
 						}],
 					}
 				}
 			});
 		};
+
+		function numberWithCommas(n) {
+			return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		}
 
 		function updateData(url){
 			$.getJSON(url, function(data){
@@ -144,7 +152,13 @@
 				} else {
 					predeath_days = 0;
 				}
-                window.myLine.options.title.text = data.title;
+				window.myLine.options.title.text = data.title;
+
+				// Cases, deaths, and dates are all the same length.
+				last = data.cases.length - 1;
+				document.getElementById("t_cases").innerHTML = numberWithCommas(data.cases[last]);
+				document.getElementById("t_deaths").innerHTML = numberWithCommas(data.deaths[last]);
+
 				lineChartData.labels = data.dates.slice(predeath_days);
 				lineChartData.datasets[0].data = data.new_cases.slice(predeath_days);
 				lineChartData.datasets[1].data = data.new_deaths.slice(predeath_days);
@@ -156,16 +170,6 @@
 			});
 		};
 		updateData("data/us.json");
-
-		// document.getElementById('randomizeData').addEventListener('click', function() {
-		// 	lineChartData.datasets.forEach(function(dataset) {
-		// 		dataset.data = dataset.data.map(function() {
-		// 			return randomScalingFactor();
-		// 		});
-		// 	});
-
-		// 	window.myLine.update();
-		// });
 	</script>
 </body>
 
