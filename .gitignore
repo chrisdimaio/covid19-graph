@@ -3,4 +3,6 @@ venv/
 
 
 *.json
-*.zip
+*.zip*
+
+test.py
